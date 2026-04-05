@@ -1,0 +1,38 @@
+import requests
+import os
+from datetime import datetime
+
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+
+def generate_morning_message():
+    today = datetime.now().strftime("%A, %B %d")
+    headers = {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
+    body = {
+        "model": "claude-haiku-4-5-20251001",
+        "max_tokens": 200,
+        "messages": [
+            {
+                "role": "user",
+                "content": f"Write a warm, uplifting good morning message for today ({today}). Keep it under 80 words. Include one short motivational quote. Use 1-2 emojis. Make it feel genuine."
+            }
+        ]
+    }
+    response = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=body)
+    data = response.json()
+    return data["content"][0]["text"]
+
+def send_telegram_message(text):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text}
+    requests.post(url, json=payload)
+    print("Message sent!")
+
+message = generate_morning_message()
+print("Message:", message)
+send_telegram_message(message)
